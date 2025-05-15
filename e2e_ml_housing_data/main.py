@@ -2,11 +2,22 @@ from pathlib import Path
 import pandas as pd
 import tarfile
 import urllib.request
+
+from sklearn.pipeline import FunctionTransformer
 from ramdom_split import split_train_test
 from hash_split import split_train_test_by_id_hash
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit, train_test_split
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import (
+    OrdinalEncoder,
+    OneHotEncoder,
+    MinMaxScaler,
+    StandardScaler,
+)
+from sklearn.metrics.pairwise import rbf_kernel
+from cluster_similarity import ClusterSimilarity
 
 
 def load_housing_data():
@@ -92,8 +103,8 @@ housing = strat_train_set.copy()
 # )
 # plt.show()
 
-numeric_columns = housing.select_dtypes(include=["number"])
-corr_matrix = numeric_columns.corr()
+housing_num = housing.select_dtypes(include=[np.number])
+corr_matrix = housing_num.corr()
 print(corr_matrix["median_house_value"].sort_values(ascending=False))
 
 
@@ -124,6 +135,91 @@ housing["rooms_per_household"] = housing["total_rooms"] / housing["households"]
 housing["bedrooms_per_room"] = housing["total_bedrooms"] / housing["total_rooms"]
 housing["population_per_household"] = housing["population"] / housing["households"]
 
-numeric_columns = housing.select_dtypes(include=["number"])
-corr_matrix = numeric_columns.corr()
+housing_num = housing.select_dtypes(include=[np.number])
+corr_matrix = housing_num.corr()
 print(corr_matrix["median_house_value"].sort_values(ascending=False))
+
+# Drop the original columns after creating new features
+housing = strat_train_set.drop("median_house_value", axis=1)
+housing_labels = strat_train_set["median_house_value"].copy()
+
+# Clean up the data
+imputer = SimpleImputer(strategy="median")
+housing_num = housing.select_dtypes(include=[np.number])
+imputer.fit(housing_num)
+print(imputer.statistics_)
+print(housing_num.median().values)
+X = imputer.transform(housing_num)
+# The result is a NumPy array, so we need to convert it back to a DataFrame
+housing_tr = pd.DataFrame(X, columns=housing_num.columns, index=housing_num.index)
+
+housing_cat = housing[["ocean_proximity"]]
+# Head of the DataFrame.
+print(housing_cat.head(8))
+# ordinal_encoder = OrdinalEncoder()
+# housing_cat_encoded = ordinal_encoder.fit_transform(housing_cat)
+# print(housing_cat_encoded[:8])
+# print(ordinal_encoder.categories_)
+
+# One-hot encoding
+one_hot_encoder = OneHotEncoder()
+housing_cat_1hot = one_hot_encoder.fit_transform(housing_cat)
+print(housing_cat_1hot.toarray()[:8])
+print(one_hot_encoder.categories_)
+
+# Scaling and Normalizing
+# min_max_scaler = MinMaxScaler(feature_range=(-1, 1))
+# housing_num_min_max_scaled = min_max_scaler.fit_transform(housing_num)
+# print(housing_num_min_max_scaled[:8])
+
+# Standardization
+standard_scaler = StandardScaler()
+housing_num_standardized = standard_scaler.fit_transform(housing_num)
+print(housing_num_standardized[:8])
+print(standard_scaler.mean_)
+print(standard_scaler.scale_)
+
+age_simil_35 = rbf_kernel(housing[["housing_median_age"]], [[35]], gamma=0.1)
+print(age_simil_35[:8])
+
+log_transformer = FunctionTransformer(func=np.log, inverse_func=np.exp)
+log_pop = log_transformer.fit_transform(housing["population"])
+
+print(log_pop[:8])
+
+
+rbf_transformer = FunctionTransformer(
+    func=rbf_kernel, kw_args={"gamma": 0.1, "Y": [[35]]}
+)
+
+age_simil_35 = rbf_transformer.fit_transform(housing[["housing_median_age"]])
+print(age_simil_35[:8])
+
+
+sf_coords = 37.7749, -122.4194
+sf_transformer = FunctionTransformer(
+    func=rbf_kernel, kw_args={"gamma": 0.1, "Y": [sf_coords]}
+)
+sf_distances = sf_transformer.fit_transform(housing[["latitude", "longitude"]])
+print(sf_distances[:8])
+
+ratio_transformer = FunctionTransformer(func=lambda X: X[:, [0]] / X[:, [1]])
+ratios = ratio_transformer.fit_transform(np.array([[1, 2], [3, 4], [5, 6]]))
+print(ratios[:8])
+
+# Custom transformer
+cluster_similarity = ClusterSimilarity(
+    n_clusters=10,
+    gamma=1.0,
+    random_state=42,
+)
+similarities = cluster_similarity.fit_transform(
+    housing[["latitude", "longitude"]], sample_weight=housing_labels
+)
+
+# Print the first 3 rows of the transformed data. Rounded to 2 decimal places.
+print(similarities[:3].round(2))
+similarities_centers = cluster_similarity.kmeans_.cluster_centers_
+print(similarities_centers.round(2))
+
+#
