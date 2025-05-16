@@ -3,7 +3,8 @@ import pandas as pd
 import tarfile
 import urllib.request
 
-from sklearn.pipeline import FunctionTransformer
+from sklearn.pipeline import FunctionTransformer, make_pipeline
+from pipeline import cat_pipeline, num_pipeline
 from ramdom_split import split_train_test
 from hash_split import split_train_test_by_id_hash
 import matplotlib.pyplot as plt
@@ -18,6 +19,11 @@ from sklearn.preprocessing import (
 )
 from sklearn.metrics.pairwise import rbf_kernel
 from cluster_similarity import ClusterSimilarity
+from sklearn.compose import (
+    ColumnTransformer,
+    make_column_selector,
+    make_column_transformer,
+)
 
 
 def load_housing_data():
@@ -103,10 +109,9 @@ housing = strat_train_set.copy()
 # )
 # plt.show()
 
-housing_num = housing.select_dtypes(include=[np.number])
-corr_matrix = housing_num.corr()
-print(corr_matrix["median_house_value"].sort_values(ascending=False))
-
+# housing_num = housing.select_dtypes(include=[np.number])
+# corr_matrix = housing_num.corr()
+# print(corr_matrix["median_house_value"].sort_values(ascending=False))
 
 # attributes = [
 #    "median_house_value",
@@ -143,29 +148,63 @@ print(corr_matrix["median_house_value"].sort_values(ascending=False))
 housing = strat_train_set.drop("median_house_value", axis=1)
 housing_labels = strat_train_set["median_house_value"].copy()
 
-# Clean up the data
-imputer = SimpleImputer(strategy="median")
-housing_num = housing.select_dtypes(include=[np.number])
-imputer.fit(housing_num)
-print(imputer.statistics_)
-print(housing_num.median().values)
-X = imputer.transform(housing_num)
-# The result is a NumPy array, so we need to convert it back to a DataFrame
-housing_tr = pd.DataFrame(X, columns=housing_num.columns, index=housing_num.index)
+# num_attribs = [
+#    "longitude",
+#    "latitude",
+#    "housing_median_age",
+#    "total_rooms",
+#    "total_bedrooms",
+#    "population",
+#    "households",
+#    "median_income",
+#    "rooms_per_household",
+#    "bedrooms_per_room",
+#    "population_per_household",
+# ]
 
-housing_cat = housing[["ocean_proximity"]]
-# Head of the DataFrame.
-print(housing_cat.head(8))
-# ordinal_encoder = OrdinalEncoder()
-# housing_cat_encoded = ordinal_encoder.fit_transform(housing_cat)
-# print(housing_cat_encoded[:8])
-# print(ordinal_encoder.categories_)
+# preprocessing = ColumnTransformer(
+#    transformers=[
+#        ("num", num_pipeline, num_attribs),  # Apply num_pipeline to num_attribs
+#        ("cat", cat_pipeline, cat_attribs),  # Apply cat_pipeline to cat_attribs
+#    ]
+# )
 
-# One-hot encoding
-one_hot_encoder = OneHotEncoder()
-housing_cat_1hot = one_hot_encoder.fit_transform(housing_cat)
-print(housing_cat_1hot.toarray()[:8])
-print(one_hot_encoder.categories_)
+preprocessing = make_column_transformer(
+    (
+        num_pipeline,
+        make_column_selector(dtype_include=np.number),
+    ),  # Apply num_pipeline to all numeric columns
+    (
+        cat_pipeline,
+        make_column_selector(dtype_include=object),
+    ),  # Apply cat_pipeline to all categorical columns
+)
+
+housing_prepared = preprocessing.fit_transform(housing)
+
+## Clean up the data
+# imputer = SimpleImputer(strategy="median")
+# housing_num = housing.select_dtypes(include=[np.number])
+# imputer.fit(housing_num)
+# print(imputer.statistics_)
+# print(housing_num.median().values)
+# X = imputer.transform(housing_num)
+## The result is a NumPy array, so we need to convert it back to a DataFrame
+# housing_tr = pd.DataFrame(X, columns=housing_num.columns, index=housing_num.index)
+#
+# housing_cat = housing[["ocean_proximity"]]
+## Head of the DataFrame.
+# print(housing_cat.head(8))
+## ordinal_encoder = OrdinalEncoder()
+## housing_cat_encoded = ordinal_encoder.fit_transform(housing_cat)
+## print(housing_cat_encoded[:8])
+## print(ordinal_encoder.categories_)
+#
+## One-hot encoding
+# one_hot_encoder = OneHotEncoder()
+# housing_cat_1hot = one_hot_encoder.fit_transform(housing_cat)
+# print(housing_cat_1hot.toarray()[:8])
+# print(one_hot_encoder.categories_)
 
 # Scaling and Normalizing
 # min_max_scaler = MinMaxScaler(feature_range=(-1, 1))
@@ -179,6 +218,8 @@ print(housing_num_standardized[:8])
 print(standard_scaler.mean_)
 print(standard_scaler.scale_)
 
+# here we use the RBF kernel to compute the similarity between samples
+# and a given point (35 years old in this case).
 age_simil_35 = rbf_kernel(housing[["housing_median_age"]], [[35]], gamma=0.1)
 print(age_simil_35[:8])
 
@@ -222,4 +263,42 @@ print(similarities[:3].round(2))
 similarities_centers = cluster_similarity.kmeans_.cluster_centers_
 print(similarities_centers.round(2))
 
+housing_renamed = housing.rename(
+    columns={
+        "ocean_proximity": "Ocean Proximity",
+        "housing_median_age": "Housing Median Age",
+        "total_rooms": "Total Rooms",
+        "total_bedrooms": "Total Bedrooms",
+        "population": "Population",
+        "households": "Households",
+        "median_income": "Median Income",
+    }
+)
+# housing_renamed["Max Similarity"] = similarities.max(axis=1)
 #
+# housing_renamed.plot(
+#    kind="scatter",
+#    x="longitude",
+#    y="latitude",
+#    # alpha=0.2,  # Transparency for better visibility
+#    grid=True,
+#    s=housing["population"] / 100,  # Scale the size of the points
+#    label="population",
+#    c="Max Similarity",
+#    cmap="jet",
+#    colorbar=True,  # Show color scale
+#    legend=True,  # Show legend
+#    sharex=False,  # Do not share x-axis with other subplots.
+#    figsize=(10, 7),  # Set figure size
+# )
+# plt.plot(
+#    cluster_similarity.kmeans_.cluster_centers_[:, 1],  # Longitude
+#    cluster_similarity.kmeans_.cluster_centers_[:, 0],  # Latitude
+#    "r*",  # Red star markers
+#    markersize=10,  # Size of the markers
+#    color="black",  # Color of the markers
+#    label="Centroids",  # Label for the legend
+#    alpha=0.8,  # Transparency for better visibility
+#    zorder=10,  # Draw on top of other elements
+# )
+# plt.show()

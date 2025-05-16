@@ -3,6 +3,12 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.metrics.pairwise import rbf_kernel
 
 
+# This class computes the similarity of each sample to the cluster centers
+# using the RBF kernel. It is a custom transformer that can be used in a pipeline.
+# It uses KMeans clustering to find the cluster centers and then computes
+# the RBF kernel similarity between the samples and the cluster centers.
+# The RBF works by computing the similarity between each sample and the cluster centers
+# using the formula: K(x, y) = exp(-gamma * ||x - y||^2)
 class ClusterSimilarity(BaseEstimator, TransformerMixin):
     def __init__(self, n_clusters=8, gamma=1.0, random_state=None):
         self.n_clusters = n_clusters
