@@ -3,24 +3,16 @@ import pandas as pd
 import tarfile
 import urllib.request
 
-from sklearn.pipeline import FunctionTransformer, make_pipeline
+from sklearn.pipeline import FunctionTransformer
 from pipeline import cat_pipeline, num_pipeline
-from ramdom_split import split_train_test
-from hash_split import split_train_test_by_id_hash
-import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.model_selection import StratifiedShuffleSplit, train_test_split
-from sklearn.impute import SimpleImputer
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import (
-    OrdinalEncoder,
-    OneHotEncoder,
-    MinMaxScaler,
     StandardScaler,
 )
 from sklearn.metrics.pairwise import rbf_kernel
 from cluster_similarity import ClusterSimilarity
 from sklearn.compose import (
-    ColumnTransformer,
     make_column_selector,
     make_column_transformer,
 )
