@@ -12,7 +12,10 @@ from cluster_similarity import ClusterSimilarity
 def ratio_pipeline():
     return make_pipeline(
         SimpleImputer(strategy="median"),
-        FunctionTransformer(lambda X: X[:, 0] / X[:, 1], feature_names_out="ratio"),
+        FunctionTransformer(
+            lambda X: X[:, [0]] / X[:, [1]],
+            feature_names_out=lambda input_features: ["ratio"],
+        ),
     )
 
 
@@ -20,7 +23,9 @@ def ratio_pipeline():
 def log_pipeline():
     return make_pipeline(
         SimpleImputer(strategy="median"),
-        FunctionTransformer(np.log, feature_names_out="one-to-one"),
+        FunctionTransformer(
+            np.log, feature_names_out=lambda input_features: ["one-to-one"]
+        ),
         StandardScaler(),
     )
 

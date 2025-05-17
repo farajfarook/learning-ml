@@ -35,4 +35,4 @@ lin_reg.fit(housing, housing_labels)
 # Evaluate the model
 housing_predictions = lin_reg.predict(housing)
 print("Predictions:", housing_predictions[:5].round(2))
-print("Labels:", housing_labels[:5].values.round(2))
+print("Labels:", housing_labels.iloc[:5].values)
