@@ -57,24 +57,25 @@ def default_numeric_pipeline():
     )
 
 
-preprocessing = ColumnTransformer(
-    [
-        ("bedrooms", ratio_pipeline(), ["total_bedrooms", "total_rooms"]),
-        ("rooms_per_house", ratio_pipeline(), ["total_rooms", "households"]),
-        ("people_per_house", ratio_pipeline(), ["population", "households"]),
-        (
-            "log",
-            log_pipeline(),
-            [
-                "total_bedrooms",
-                "total_rooms",
-                "population",
-                "households",
-                "median_income",
-            ],
-        ),
-        ("geo", cluster_similarity, ["latitude", "longitude"]),
-        ("cat", cat_pipeline(), make_column_selector(dtype_include=object)),
-    ],
-    remainder=default_numeric_pipeline(),
-)
+def create_preprocessor():
+    return ColumnTransformer(
+        [
+            ("bedrooms", ratio_pipeline(), ["total_bedrooms", "total_rooms"]),
+            ("rooms_per_house", ratio_pipeline(), ["total_rooms", "households"]),
+            ("people_per_house", ratio_pipeline(), ["population", "households"]),
+            (
+                "log",
+                log_pipeline(),
+                [
+                    "total_bedrooms",
+                    "total_rooms",
+                    "population",
+                    "households",
+                    "median_income",
+                ],
+            ),
+            ("geo", cluster_similarity, ["latitude", "longitude"]),
+            ("cat", cat_pipeline(), make_column_selector(dtype_include=object)),
+        ],
+        remainder=default_numeric_pipeline(),
+    )

@@ -1,10 +1,8 @@
-from pathlib import Path
 import pandas as pd
-import tarfile
-import urllib.request
 
 from sklearn.pipeline import FunctionTransformer
-from pipeline import cat_pipeline, num_pipeline
+from load_data import load_housing_data
+from preprocessor import cat_pipeline, num_pipeline
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import (
@@ -16,18 +14,6 @@ from sklearn.compose import (
     make_column_selector,
     make_column_transformer,
 )
-
-
-def load_housing_data():
-    tarball_path = Path("datasets/housing.tgz")
-    if not tarball_path.exists():
-        Path("datasets").mkdir(parents=True, exist_ok=True)
-        url = "https://github.com/ageron/data/raw/main/housing.tgz"
-        urllib.request.urlretrieve(url, tarball_path)
-        with tarfile.open(tarball_path) as tar:
-            tar.extractall(path=tarball_path.parent)
-    return pd.read_csv(f"{tarball_path.parent}/housing/housing.csv")
-
 
 housing = load_housing_data()
 # print(housing.head())
