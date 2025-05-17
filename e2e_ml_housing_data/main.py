@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import root_mean_squared_error
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.tree import DecisionTreeRegressor
 
@@ -41,11 +42,24 @@ print("Root Mean Squared Error:", lin_rmse)
 
 # Decision Tree Regressor
 tree_reg = make_pipeline(preprocessor, DecisionTreeRegressor())
-tree_reg.fit(housing, housing_labels)
+tree_rmse_scores = -cross_val_score(
+    tree_reg, housing, housing_labels, scoring="neg_root_mean_squared_error", cv=10
+)
+print("Decision Tree Regressor RMSE Scores:")
+print(pd.Series(tree_rmse_scores).describe())
 
-# Evaluate the model
-housing_predictions = tree_reg.predict(housing)
-print("Predictions:", housing_predictions[:5].round(2))
-print("Labels:", housing_labels.iloc[:5].values)
-tree_rmse = root_mean_squared_error(housing_labels, housing_predictions)
-print("Root Mean Squared Error:", tree_rmse)
+# Random Forest Regressor
+forest_reg = make_pipeline(
+    preprocessor,
+    RandomForestRegressor(random_state=42, n_jobs=-1),  # Use all CPU cores
+)
+forest_rmse_scores = -cross_val_score(
+    forest_reg,
+    housing,
+    housing_labels,
+    scoring="neg_root_mean_squared_error",
+    cv=10,
+    n_jobs=-1,  # Use all CPU cores for cross-validation
+)
+print("Random Forest Regressor RMSE Scores:")
+print(pd.Series(forest_rmse_scores).describe())
