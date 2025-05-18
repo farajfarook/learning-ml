@@ -13,11 +13,16 @@ def ratio_name(function_transformer, feature_names_in):
     return ["ratio"]
 
 
+# important for seralizing the pipeline
+def ratio_function(X):
+    return X[:, [0]] / X[:, [1]]
+
+
 def ratio_pipeline():
     return make_pipeline(
         SimpleImputer(strategy="median"),
         FunctionTransformer(
-            lambda X: X[:, [0]] / X[:, [1]],
+            ratio_function,
             feature_names_out=ratio_name,
         ),
     )
