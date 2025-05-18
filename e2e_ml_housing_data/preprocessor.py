@@ -9,25 +9,29 @@ from cluster_similarity import ClusterSimilarity
 
 
 # Pipeline for the ratio of two features
+def ratio_name(function_transformer, feature_names_in):
+    return ["ratio"]
+
+
 def ratio_pipeline():
     return make_pipeline(
         SimpleImputer(strategy="median"),
         FunctionTransformer(
             lambda X: X[:, [0]] / X[:, [1]],
-            feature_names_out=lambda input_features: ["ratio"],
+            feature_names_out=ratio_name,
         ),
     )
 
 
 # Pipeline for log transformation
-def log_pipeline():
-    return make_pipeline(
-        SimpleImputer(strategy="median"),
-        FunctionTransformer(
-            np.log, feature_names_out=lambda input_features: ["one-to-one"]
-        ),
-        StandardScaler(),
-    )
+log_pipeline = make_pipeline(
+    SimpleImputer(strategy="median"),
+    FunctionTransformer(
+        np.log,
+        feature_names_out="one-to-one",  # using one-to-one to keep the same number of features
+    ),
+    StandardScaler(),
+)
 
 
 # Pipeline for numeric features
@@ -39,11 +43,10 @@ def num_pipeline():
 
 
 # Pipeline for categorical features
-def cat_pipeline():
-    return make_pipeline(
-        SimpleImputer(strategy="most_frequent"),
-        OneHotEncoder(handle_unknown="ignore"),
-    )
+cat_pipeline = make_pipeline(
+    SimpleImputer(strategy="most_frequent"),
+    OneHotEncoder(handle_unknown="ignore"),
+)
 
 
 # Cluster similarity for geographical features
@@ -70,7 +73,7 @@ def create_preprocessor():
             ("people_per_house", ratio_pipeline(), ["population", "households"]),
             (
                 "log",
-                log_pipeline(),
+                log_pipeline,
                 [
                     "total_bedrooms",
                     "total_rooms",
@@ -80,7 +83,7 @@ def create_preprocessor():
                 ],
             ),
             ("geo", cluster_similarity, ["latitude", "longitude"]),
-            ("cat", cat_pipeline(), make_column_selector(dtype_include=object)),
+            ("cat", cat_pipeline, make_column_selector(dtype_include=object)),
         ],
         remainder=default_numeric_pipeline(),
     )
