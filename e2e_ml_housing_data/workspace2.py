@@ -1,20 +1,17 @@
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LinearRegression
 from sklearn.metrics import root_mean_squared_error
 from sklearn.model_selection import (
-    GridSearchCV,
     RandomizedSearchCV,
-    cross_val_score,
     train_test_split,
 )
-from sklearn.pipeline import Pipeline, make_pipeline
-from sklearn.tree import DecisionTreeRegressor
+from sklearn.pipeline import Pipeline
 from scipy.stats import randint
 
 from load_data import load_housing_data
 from preprocessor import create_preprocessor
+from scipy import stats
 
 housing = load_housing_data()
 
@@ -133,13 +130,41 @@ feature_importances = final_model[
     "random_forest"
 ].feature_importances_  # Feature importances
 
-print("Feature importances:")
+# Create DataFrame for nicer display
+importance_df = pd.DataFrame(
+    {
+        "Feature": final_model["preprocessor"].get_feature_names_out(),
+        "Importance": feature_importances,
+    }
+)
+
+# Sort by importance, round values
+importance_df = importance_df.sort_values("Importance", ascending=False)
+importance_df["Importance"] = importance_df["Importance"].round(4)
+
+# Print the formatted result
+print("\nFeature Importances:")
+print(importance_df)
+
+
+X_test = test_set.drop("median_house_value", axis=1)
+y_test = test_set["median_house_value"].copy()
+
+final_predictions = final_model.predict(X_test)
+final_rmse = root_mean_squared_error(y_test, final_predictions)
+print("Final RMSE on test set:", final_rmse)
+
+# Calculate 95% confidence interval for RMSE
+# Assuming the errors are normally distributed
+confidence = 0.95
+squared_errors = (final_predictions - y_test) ** 2
 print(
-    sorted(
-        zip(
-            feature_importances.round(4),
-            final_model["preprocessor"].get_feature_names_out(),
-        ),
-        reverse=True,
+    np.sqrt(
+        stats.t.interval(
+            confidence,
+            len(squared_errors) - 1,  # degrees of freedom
+            loc=np.mean(squared_errors),  # sample mean
+            scale=stats.sem(squared_errors),  # standard error of the mean
+        )
     )
 )
