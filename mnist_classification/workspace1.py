@@ -1,6 +1,8 @@
 from matplotlib import pyplot as plt
 from sklearn.datasets import fetch_openml
+from sklearn.dummy import DummyClassifier
 from sklearn.linear_model import SGDClassifier
+from sklearn.model_selection import cross_val_score
 
 from plot_digit import plot_digit
 
@@ -34,3 +36,12 @@ sgd_clf.fit(x_train, y_train_5)
 #    plot_digit(x_train[i])
 #
 # plt.show()
+print("SGDClassifier score: ", sgd_clf.score(x_test, y_test_5))
+print(
+    "Cross-validation scores: ",
+    cross_val_score(sgd_clf, x_train, y_train_5, cv=3, scoring="accuracy"),
+)
+
+dummy_clf = DummyClassifier(strategy="most_frequent")
+dummy_clf.fit(x_train, y_train_5)
+print("DummyClassifier score: ", dummy_clf.score(x_test, y_test_5))
