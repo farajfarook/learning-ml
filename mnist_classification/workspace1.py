@@ -95,3 +95,12 @@ precisions, recalls, thresholds = precision_recall_curve(y_train_5, y_scores)
 # plt.grid()
 # plt.legend(loc="upper right", fontsize=12)
 # plt.show()
+
+idx_90_precision = (precisions >= 0.90).argmax()
+thresholds_90_precision = thresholds[idx_90_precision]
+print("Threshold for 90% precision:", thresholds_90_precision)
+
+y_train_pred_90_precision = y_scores >= thresholds_90_precision
+print("Precision:", precision_score(y_train_5, y_train_pred_90_precision))
+print("Recall:", recall_score(y_train_5, y_train_pred_90_precision))
+print("F1 score:", f1_score(y_train_5, y_train_pred_90_precision))
