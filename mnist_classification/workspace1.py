@@ -2,6 +2,7 @@ from matplotlib import pyplot as plt
 from sklearn.calibration import cross_val_predict
 from sklearn.datasets import fetch_openml
 from sklearn.dummy import DummyClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import (
     confusion_matrix,
@@ -9,6 +10,8 @@ from sklearn.metrics import (
     precision_recall_curve,
     precision_score,
     recall_score,
+    roc_auc_score,
+    roc_curve,
 )
 from sklearn.model_selection import cross_val_score
 
@@ -96,11 +99,58 @@ precisions, recalls, thresholds = precision_recall_curve(y_train_5, y_scores)
 # plt.legend(loc="upper right", fontsize=12)
 # plt.show()
 
-idx_90_precision = (precisions >= 0.90).argmax()
-thresholds_90_precision = thresholds[idx_90_precision]
-print("Threshold for 90% precision:", thresholds_90_precision)
+idx_90_precision = (
+    precisions >= 0.90
+).argmax()  # This is the index of the first precision value that is greater than or equal to 0.90
+thresholds_90_precision = thresholds[
+    idx_90_precision
+]  # This is the threshold value that gives us 90% precision
+# print("Threshold for 90% precision:", thresholds_90_precision)
+#
+# y_train_pred_90_precision = y_scores >= thresholds_90_precision
+# print("Precision:", precision_score(y_train_5, y_train_pred_90_precision))
+# print("Recall:", recall_score(y_train_5, y_train_pred_90_precision))
+# print("F1 score:", f1_score(y_train_5, y_train_pred_90_precision))
 
-y_train_pred_90_precision = y_scores >= thresholds_90_precision
-print("Precision:", precision_score(y_train_5, y_train_pred_90_precision))
-print("Recall:", recall_score(y_train_5, y_train_pred_90_precision))
-print("F1 score:", f1_score(y_train_5, y_train_pred_90_precision))
+
+fpr, tpr, thresholds = roc_curve(y_train_5, y_scores)
+idx_for_threshold_at_90 = (
+    thresholds <= thresholds_90_precision
+).argmax()  # This is the index of the first threshold value that is greater than or equal to the threshold for 90% precision
+tpr_at_90 = tpr[
+    idx_for_threshold_at_90
+]  # This is the true positive rate at that threshold
+fpr_at_90 = fpr[
+    idx_for_threshold_at_90
+]  # This is the false positive rate at that threshold
+
+# plt.plot(fpr, tpr, "b-", linewidth=2, label="ROC curve")
+# plt.grid()
+# plt.xlabel("False Positive Rate (Fallout)", fontsize=12)
+# plt.ylabel("True Positive Rate (Recall)", fontsize=12)
+# plt.plot(
+#    [0, 1], [0, 1], "k--", label="Random", linewidth=2
+# )  # This is the diagonal line representing random guessing
+# plt.plot([fpr_at_90], [tpr_at_90], "ro", label="Threshold for 90% precision")
+# plt.title("ROC Curve", fontsize=14)
+# plt.legend(loc="lower right", fontsize=12)
+# plt.show()
+
+roc_auc = roc_auc_score(y_train_5, y_scores)
+print("ROC AUC score:", roc_auc)
+
+forent_clf = RandomForestClassifier(random_state=42)
+y_probs_forest = cross_val_predict(
+    forent_clf, x_train, y_train_5, cv=3, method="predict_proba"
+)
+print("y_probs_forest shape:", y_probs_forest[:2])
+precision_forest, recall_forest, thresholds_forest = precision_recall_curve(
+    y_train_5, y_probs_forest[:, 1]
+)
+
+plt.plot(recall_forest, precision_forest, "b-", linewidth=2, label="Random Forest")
+plt.plot(recalls, precisions, "g-", linewidth=2, label="SGD")
+plt.grid()
+plt.xlabel("Recall", fontsize=12)
+plt.ylabel("Precision", fontsize=12)
+plt.show()
