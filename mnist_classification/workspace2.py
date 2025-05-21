@@ -19,3 +19,5 @@ print("SVC decision function score: ", some_digit_score)
 
 class_id = some_digit_score.argmax()
 print("Class ID: ", class_id)
+
+print("Predicted class: ", svc_clf.classes_[class_id])
