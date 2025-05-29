@@ -26,7 +26,7 @@ aug_x_train = []
 aug_y_train = []
 
 
-for i, (image, label) in enumerate(zip(x_train, y_train)):
+for i, (image, label) in enumerate(zip(x_train[:1000], y_train[:1000])):
     # Add original image
     aug_x_train.append(image)
     # Add shifted versions using custom shift_image function

@@ -21,7 +21,7 @@ grid_search = GridSearchCV(
     scoring="accuracy",
     n_jobs=-1,
 )
-grid_search.fit(x_train, y_train)
+grid_search.fit(x_train[:1000], y_train[:1000])
 # Output the best parameters and score
 print(f"Best parameters: {grid_search.best_params_}")
 print(f"Best score: {grid_search.best_score_:.2f}")
