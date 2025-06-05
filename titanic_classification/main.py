@@ -13,22 +13,19 @@ train_data = pd.read_csv("data/train.csv")
 y = train_data["Survived"]
 x = train_data.drop(columns=["Survived"])
 
+mask = x["Embarked"].notna()
+x = x[mask]
+y = y[mask]
+
 # Split into train and validation sets
 x_train, x_test, y_train, y_test = train_test_split(
     x, y, test_size=0.2, random_state=42
 )
 
-# remove rows with missing values in 'Embarked' column
-x_train = x_train.dropna(subset=["Embarked"])
-y_train = y_train[x_train.index]  # Ensure y_train matches x_train after dropping rows
-
 preprocessor = create_preprocessor()
 
 # Create a pipeline with the transformer and SGDClassifier
 pipeline = make_pipeline(preprocessor, SGDClassifier(random_state=42))
-
-# Fit the pipeline on the training data
-pipeline.fit(x_train, y_train)
 
 param_distributions = {
     "sgdclassifier__loss": ["hinge", "log", "modified_huber"],
@@ -51,6 +48,3 @@ random_search.fit(x_train, y_train)
 # Print the best parameters and score
 print("Best parameters found: ", random_search.best_params_)
 print("Best cross-validation score: ", random_search.best_score_)
-# Evaluate the model on the test set
-test_score = random_search.score(x_test, y_test)
-print("Test set score: ", test_score)

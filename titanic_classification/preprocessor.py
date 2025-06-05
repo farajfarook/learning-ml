@@ -19,6 +19,8 @@ class TitanicPreprocessor(BaseEstimator, TransformerMixin):
 
         # Extract title from name
         X["Title"] = X["Name"].str.extract(r"([A-Za-z]+)\.", expand=False)
+        common_titles = ["Mr", "Miss", "Mrs", "Master"]
+        X["Title"] = X["Title"].apply(lambda x: x if x in common_titles else "Other")
 
         # Remove unnecessary columns
         X = X.drop(columns=["Name", "Ticket", "PassengerId"])
