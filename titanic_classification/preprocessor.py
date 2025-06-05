@@ -33,7 +33,7 @@ transformer = ColumnTransformer(
         # One-hot encode for categorical variables - Sex and Embarked
         (
             "categorical",
-            OneHotEncoder(sparse_output=False, drop="first"),
+            OneHotEncoder(sparse_output=False, drop="first", handle_unknown="ignore"),
             ["Sex", "Embarked", "Title"],
         ),
         # Deck: Impute missing values with "U" the most frequent value and one-hot encode
@@ -41,14 +41,16 @@ transformer = ColumnTransformer(
             "deck",
             make_pipeline(
                 SimpleImputer(strategy="constant", fill_value="U"),
-                OneHotEncoder(sparse_output=False, drop="first"),
+                OneHotEncoder(
+                    sparse_output=False, drop="first", handle_unknown="ignore"
+                ),
             ),
             ["Deck"],
         ),
         # pclass - One-hot encode
         (
             "pclass",
-            OneHotEncoder(sparse_output=False, drop="first"),
+            OneHotEncoder(sparse_output=False, drop="first", handle_unknown="ignore"),
             ["Pclass"],
         ),
     ],
@@ -61,10 +63,35 @@ transformer = ColumnTransformer(
 
 
 def create_preprocessor():
-    """
-    Create a transformer for the Titanic dataset.
-
-    Returns:
-        ColumnTransformer: A transformer that preprocesses the Titanic dataset.
-    """
-    return make_pipeline(TitanicPreprocessor(), transformer)
+    return ColumnTransformer(
+        [
+            (
+                "categorical",
+                OneHotEncoder(
+                    sparse_output=False, drop="first", handle_unknown="ignore"
+                ),
+                ["Sex", "Embarked", "Title"],
+            ),
+            (
+                "deck",
+                make_pipeline(
+                    SimpleImputer(strategy="constant", fill_value="U"),
+                    OneHotEncoder(
+                        sparse_output=False, drop="first", handle_unknown="ignore"
+                    ),
+                ),
+                ["Deck"],
+            ),
+            (
+                "pclass",
+                OneHotEncoder(
+                    sparse_output=False, drop="first", handle_unknown="ignore"
+                ),
+                ["Pclass"],
+            ),
+        ],
+        remainder=make_pipeline(
+            SimpleImputer(strategy="mean"),
+            StandardScaler(),
+        ),
+    )
